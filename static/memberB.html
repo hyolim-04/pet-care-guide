@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌾 맞춤 사료 추천 — Pet Care Guide</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .badge-type { border-radius: 10px; padding: 4px 10px; font-size: 0.76rem; font-weight: 700; display: inline-block; }
+    .dog-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 50px;
+      border: 2px solid #dee2e6; background: white;
+      cursor: pointer; font-weight: 700; font-size: 0.88rem;
+      transition: all 0.2s; margin: 4px;
+    }
+    .dog-chip.selected { border-color: #198754; background: #e8f5e9; color: #198754; }
+    .dog-chip:hover { border-color: #20c997; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-light bg-white border-bottom sticky-top" style="height:70px;">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand fs-4 fw-bold text-success text-decoration-none" href="/">🌿 Pet Care Guide</a>
+      <a href="/memberA" class="btn btn-sm btn-outline-secondary">← 체형 분석으로</a>
+    </div>
+  </nav>
+
+  <div class="container py-5" style="max-width:720px;">
+
+    <div id="no-profile-alert" class="d-none p-4 rounded mb-4" style="border-left:4px solid #ffc107;background:#fff3cd;color:#664d03;">
+      💡 모듈 A에서 강아지를 먼저 등록해주세요.
+      <a href="/memberA" class="btn btn-sm ms-3" style="background:#198754;color:white;border:none;">모듈 A로 이동</a>
+    </div>
+
+    <div id="main-content" class="d-none">
+
+      <div class="card p-4 mb-4" style="border-radius:16px;border:1px solid #e9ecef;">
+        <h5 class="mb-3">🐶 강아지 선택</h5>
+        <div id="dog-chips">
+          <span class="text-muted" style="font-size:0.87rem;">불러오는 중...</span>
+        </div>
+      </div>
+
+      <div id="profile-section" class="d-none card p-4 mb-4" style="border-radius:16px;border:1px solid #e9ecef;">
+        <h5 class="mb-3">📋 강아지 프로필</h5>
+        <div id="profile-display" class="mb-4"></div>
+        <div class="text-end">
+          <button class="btn" style="background:#198754;color:white;border-radius:8px;padding:10px 20px;font-weight:bold;" onclick="exploreFood()">
+            🔍 맞춤 사료 탐색
+          </button>
+        </div>
+      </div>
+
+      <div id="result-section" class="d-none">
+        <div id="hash-card" class="card p-4 mb-4" style="border-radius:16px;border-left:5px solid #20c997;border-top:1px solid #e9ecef;border-right:1px solid #e9ecef;border-bottom:1px solid #e9ecef;">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span style="font-size:2rem;">⚡</span>
+            <div>
+              <div class="fw-bold text-success fs-6">해시맵 탐색 완료!</div>
+              <div class="text-muted small" id="hash-desc"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="obese-alert" class="d-none card p-3 mb-4" style="border-radius:16px;border-left:5px solid #e74c3c;border-top:1px solid #e9ecef;border-right:1px solid #e9ecef;border-bottom:1px solid #e9ecef;">
+          <span class="fw-bold" style="color:#e74c3c;">⚠️ 비만 판정</span>
+          <span class="text-muted ms-2 small">해당 사이즈 기준 초과 체중 감지 — 다이어트 사료에 가산점이 자동 적용되었습니다.</span>
+        </div>
+
+        <div id="underweight-alert" class="d-none card p-3 mb-4" style="border-radius:16px;border-left:5px solid #0d6efd;border-top:1px solid #e9ecef;border-right:1px solid #e9ecef;border-bottom:1px solid #e9ecef;">
+          <span class="fw-bold" style="color:#0d6efd;">⚠️ 저체중 판정</span>
+          <span class="text-muted ms-2 small">해당 사이즈 기준 미달 체중 감지 — 고단백 영양 보충 사료에 가산점이 자동 적용되었습니다.</span>
+        </div>
+
+        <div class="card p-4" style="border-radius:16px;border:1px solid #e9ecef;">
+          <h4 class="text-success mb-4" id="top3-title">🏆 맞춤 사료 TOP 3</h4>
+          <div id="top3-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API = ''; 
+    const rankEmoji = ["🥇","🥈","🥉"];
+    const proteinLabel = { high:"고단백", low:"저단백", normal:"일반" };
+    const sizeKr = { small:"소형", medium:"중형", large:"대형" };
+    const sizeLabel = { small:"소형견", medium:"중형견", large:"대형견" };
+    const actLabel  = { low:"낮음", medium:"보통", high:"높음" };
+
+    let dogsList = [];
+    let selectedDogId = null;
+    let currentRecData = null;
+
+    window.onload = async function() {
+      try {
+        const res = await fetch(API + '/api/dogs');
+        dogsList = await res.json();
+      } catch (e) {
+        console.error("강아지 목록을 불러오지 못했습니다.", e);
+      }
+
+      if (!dogsList || dogsList.length === 0) {
+        document.getElementById('no-profile-alert').classList.remove('d-none');
+        return;
+      }
+
+      document.getElementById('main-content').classList.remove('d-none');
+      renderDogChips();
+
+      const raw = localStorage.getItem('module1_profile');
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (dogsList.find(d => d.id === p.dog_id)) {
+          selectDog(p.dog_id);
+        }
+      }
+    };
+
+    function renderDogChips() {
+      const wrap = document.getElementById('dog-chips');
+      wrap.innerHTML = dogsList.map(d => `
+        <button class="dog-chip ${d.id === selectedDogId ? 'selected' : ''}" onclick="selectDog(${d.id})">
+          🐾 ${d.name}
+          <span style="font-weight:400;color:#888;font-size:0.8rem;">${d.breed}</span>
+        </button>`).join('');
+    }
+
+    async function selectDog(id) {
+      selectedDogId = id;
+      renderDogChips();
+      
+      document.getElementById('result-section').classList.add('d-none');
+      document.getElementById('obese-alert').classList.add('d-none');
+      document.getElementById('underweight-alert').classList.add('d-none');
+      currentRecData = null;
+
+      const res = await fetch(API + '/api/recommend/' + id);
+      if (!res.ok) {
+        alert("데이터를 불러오는데 실패했습니다.");
+        return;
+      }
+      const data = await res.json();
+      currentRecData = data; 
+
+      const p = data.profile;
+      document.getElementById('profile-section').classList.remove('d-none');
+      document.getElementById('profile-display').innerHTML = `
+        <div class="row text-center fw-bold bg-light p-3 rounded">
+          <div class="col"><span class="text-muted d-block small mb-1">이름</span>${p.name}</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">품종</span>${p.breed}</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">나이</span>${p.age}세</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">체중</span>${p.weight}kg</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">크기</span>${sizeLabel[p.size]||p.size}</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">활동량</span>${actLabel[p.activity]||p.activity}</div>
+          <div class="col border-start"><span class="text-muted d-block small mb-1">기저질환</span>${p.conditions.join(', ')}</div>
+        </div>`;
+    }
+
+    function exploreFood() {
+      if (!currentRecData) return;
+      const data = currentRecData;
+
+      document.getElementById('result-section').classList.remove('d-none');
+
+      document.getElementById('hash-desc').innerHTML =
+        `전체 사료 <strong>${data.total_count}개</strong> 중, <strong>${sizeKr[data.profile.size]||data.profile.size} 사이즈 강아지</strong> 버킷에서 <strong>${data.bucket_count}개</strong>만 O(1)로 즉시 추출했습니다.`;
+
+      if (data.profile.is_obese) {
+        document.getElementById('obese-alert').classList.remove('d-none');
+      } else {
+        document.getElementById('obese-alert').classList.add('d-none');
+      }
+
+      if (data.profile.is_underweight) {
+        document.getElementById('underweight-alert').classList.remove('d-none');
+      } else {
+        document.getElementById('underweight-alert').classList.add('d-none');
+      }
+
+      document.getElementById('top3-title').textContent = `🏆 ${data.profile.name} 맞춤 사료 TOP 3`;
+
+      if (!data.top3.length) {
+        document.getElementById('top3-list').innerHTML = `<div class="text-center text-muted py-4">😢 해당 조건에 맞는 사료를 찾지 못했습니다.</div>`;
+        return;
+      }
+
+      document.getElementById('top3-list').innerHTML = data.top3.map((food, i) => {
+        const reasons = (food.reasons || []).map(r => `
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div style="height:8px;border-radius:4px;background:#198754;width:${Math.min(r['점수']*2,200)}px;min-width:20px;"></div>
+            <span class="small text-muted">${r['사유']}</span>
+          </div>`).join('');
+        return `
+          <div class="bg-white p-4 mb-3 rounded shadow-sm" style="border-left:6px solid ${i===0?'#20c997':'#dee2e6'};">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+              <strong style="font-size:1.05rem;">${rankEmoji[i]} ${food.name}</strong>
+              <span class="badge" style="background:#198754;padding:6px 14px;">적합도 ${food.score}점</span>
+            </div>
+            <p class="text-muted small mb-3">
+              💰 ${food.price.toLocaleString()}원
+              ${food.has_joint_supp ? ' | 🦴 관절 특화' : ''}
+              ${food.has_heart_supp ? ' | ❤️ 심장 특화' : ''}
+              ${food.has_kidney_supp ? ' | 💧 신장 특화' : ''}
+              | 단백질: ${proteinLabel[food.protein]||'일반'}
+            </p>
+            ${reasons ? `<div class="mt-2 p-3 rounded" style="background:#f8fffe;border:1px solid #d1f5eb;">
+              <div class="fw-bold small text-secondary mb-2">⚖️ WSM 채점 내역</div>${reasons}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

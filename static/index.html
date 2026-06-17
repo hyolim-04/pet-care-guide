@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🐾 펫 케어 가이드 (Pet Care Guide)</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .sidebar {
+        background-color: #ffffff;
+        min-height: calc(100vh - 70px);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.03);
+      }
+      .nav-link {
+        color: #495057;
+        font-weight: 500;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .nav-link:hover {
+        background-color: #e8f5e9;
+        color: #198754;
+      }
+      .nav-link.active {
+        background-color: #198754 !important;
+        color: white !important;
+      }
+      .navbar-brand {
+        font-weight: 800;
+        color: #198754 !important;
+      }
+      .content-section {
+        display: none;
+        width: 100%;
+        height: calc(100vh - 70px);
+      }
+      .content-section.active {
+        display: block;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top"
+      style="height: 70px"
+    >
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fs-4" href="#" onclick="showSection('home')"
+          >🌿 Pet Care Guide</a
+        >
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a
+                class="nav-link active"
+                id="menu-home"
+                onclick="showSection('home')"
+                >🏠 홈 / 대시보드</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="menu-A" onclick="showSection('A')"
+                >🦴 Bone 1. 체형 & 칼로리 분석</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="menu-B" onclick="showSection('B')"
+                >🌾 Grain 2. 맞춤 사료 추천</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="menu-C" onclick="showSection('C')"
+                >🔍 Search 3. 증상 검색 엔진</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="menu-D" onclick="showSection('D')"
+                >📍 Location 4. 응급 병원 안내</a
+              >
+            </li>
+          </ul>
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 p-0">
+          <div id="content-home" class="content-section active p-5">
+            <h1>🐾 환영합니다!</h1>
+            <p>
+              좌측 메뉴를 클릭해 각 모듈을 통합 대시보드 내에서 바로 사용하세요.
+            </p>
+          </div>
+
+          <div id="content-A" class="content-section">
+            <iframe id="iframe-A" src="/memberA"></iframe>
+          </div>
+          <div id="content-B" class="content-section">
+            <iframe id="iframe-B" src=""></iframe>
+          </div>
+          <div id="content-C" class="content-section p-5">
+            <iframe id="iframe-C" src="/memberC"></iframe>
+          </div>
+          <div id="content-D" class="content-section">
+            <iframe id="iframe-D" src="/memberD"></iframe>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      function showSection(id) {
+        document
+          .querySelectorAll(".content-section")
+          .forEach((s) => s.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-link")
+          .forEach((l) => l.classList.remove("active"));
+        document.getElementById("content-" + id).classList.add("active");
+        document.getElementById("menu-" + id).classList.add("active");
+
+        // B 탭 클릭할 때마다 iframe을 새로 로드해서 localStorage 최신값을 읽도록 함
+        if (id === "B") {
+          document.getElementById("iframe-B").src = "/memberB";
+        }
+      }
+    </script>
+  </body>
+</html>

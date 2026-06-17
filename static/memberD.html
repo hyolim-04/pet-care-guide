@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📍 응급 병원 우선 추천 안내</title>
+  <link rel="icon" href="data:," />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+    rel="stylesheet" />
+  <!-- 카카오맵 JavaScript SDK -->
+  <script type="text/javascript"
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=dc030715c8c18d68f0e983497a69a1e6&libraries=services"></script>
+  <style>
+    :root {
+      --green: #198754;
+      --green-light: #e8f5e9;
+      --green-mid: #a5d6a7;
+      --accent: #ff6b35;
+      --warn: #ffc107;
+      --bg: #f8fdf9;
+      --card: #ffffff;
+      --text: #1a2e1a;
+      --muted: #6c757d;
+      --border: #dee2e6;
+      --shadow: 0 4px 20px rgba(25, 135, 84, 0.08);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* 헤더 */
+    .page-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .page-header h1 {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--green);
+    }
+
+    .badge-module {
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .back-btn {
+      margin-left: auto;
+      background: none;
+      border: 1.5px solid var(--green);
+      color: var(--green);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: var(--green);
+      color: #fff;
+    }
+
+    /* 알고리즘 뱃지 */
+    .algo-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 28px;
+      background: var(--green-light);
+      border-bottom: 1px solid var(--green-mid);
+      font-size: 0.8rem;
+    }
+
+    .algo-badge {
+      background: var(--green);
+      color: #fff;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-weight: 700;
+    }
+
+    .ds-badge {
+      background: #fff;
+      color: var(--green);
+      border: 1.5px solid var(--green);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-weight: 700;
+    }
+
+    /* 메인 레이아웃 */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: calc(100vh - 108px);
+    }
+
+    /* 좌측 패널 */
+    .left-panel {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      max-height: calc(100vh - 108px);
+    }
+
+    .panel-title {
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--green-light);
+      margin-bottom: 2px;
+    }
+
+    /* 입력 공통 */
+    .inp {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: border 0.2s;
+    }
+
+    .inp:focus {
+      border-color: var(--green);
+    }
+
+    label.lbl {
+      font-size: 0.84rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    /* 주소 입력 + 검색버튼 */
+    .addr-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .addr-row input {
+      flex: 1;
+    }
+
+    .btn-search-addr {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-search-addr:hover {
+      background: #146c43;
+    }
+
+    /* 필터 */
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.84rem;
+    }
+
+    .filter-item label {
+      font-weight: 600;
+      min-width: 80px;
+    }
+
+    .filter-item input[type=range] {
+      flex: 1;
+      accent-color: var(--green);
+    }
+
+    .val-badge {
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 700;
+      font-size: 0.78rem;
+      border-radius: 8px;
+      padding: 2px 8px;
+      min-width: 52px;
+      text-align: center;
+    }
+
+    .filter-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .filter-check input {
+      accent-color: var(--green);
+      width: 15px;
+      height: 15px;
+    }
+
+    /* 실행 버튼 */
+    .btn-run {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 1rem;
+      font-weight: 900;
+      font-family: inherit;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(25, 135, 84, 0.25);
+    }
+
+    .btn-run:hover {
+      background: #146c43;
+      transform: translateY(-1px);
+    }
+
+    .btn-run:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Top-K 선택 안내 */
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap input {
+      padding-right: 36px;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    /* 결과 카드 */
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .result-card {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 13px;
+      cursor: pointer;
+      transition: all 0.18s;
+      position: relative;
+      background: var(--card);
+    }
+
+    .result-card:hover {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .result-card.selected {
+      border-color: var(--green);
+      background: var(--green-light);
+      box-shadow: 0 0 0 2px var(--green);
+    }
+
+    .result-card.is-active {
+      border-color: var(--green);
+      background: var(--green-light);
+      box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .result-card.emergency {
+      border-left: 3px solid var(--accent);
+    }
+
+    .rank-badge {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+
+    .result-card.emergency .rank-badge {
+      background: var(--accent);
+    }
+
+    .hospital-name {
+      font-weight: 800;
+      font-size: 0.9rem;
+      margin-bottom: 3px;
+      padding-right: 60px;
+    }
+
+    .hospital-meta {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .distance-tag {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      font-size: 0.73rem;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin-top: 4px;
+    }
+
+    .addr-tag {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 0.72rem;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin-top: 3px;
+      margin-left: 4px;
+    }
+
+    /* 우측 패널 */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .graph-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .graph-header h3 {
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .graph-legend {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    /* 카카오맵 */
+    #kakao-map {
+      flex: 1;
+      width: 100%;
+      min-height: 360px;
+    }
+
+    .map-hospital-marker {
+      position: relative;
+      text-align: center;
+      cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .map-hospital-pin {
+      background: var(--pin-color);
+      color: #fff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .map-hospital-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 10px;
+      border-radius: 4px;
+      padding: 1px 5px;
+      white-space: nowrap;
+    }
+
+    .map-hospital-marker:hover .map-hospital-pin,
+    .map-hospital-marker.is-active .map-hospital-pin {
+      transform: scale(1.28);
+      border-color: #ffc107;
+      box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.28), 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .map-hospital-marker.is-active .map-hospital-label {
+      background: var(--green);
+      font-weight: 800;
+    }
+
+    /* SVG 알고리즘 시각화 */
+    #graph-canvas {
+      width: 100%;
+      height: 200px;
+      display: block;
+      background: #fafafa;
+      border-top: 1px solid var(--border);
+    }
+
+    /* 힙 디버거 */
+    .step-debugger {
+      background: #f0fdf4;
+      border-top: 1px solid var(--green-mid);
+      padding: 10px 20px;
+      font-size: 0.78rem;
+    }
+
+    .step-title {
+      font-weight: 900;
+      color: var(--green);
+      margin-bottom: 5px;
+    }
+
+    .heap-items {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .heap-item {
+      background: var(--card);
+      border: 1.5px solid var(--green);
+      border-radius: 8px;
+      padding: 3px 9px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .heap-item.popped {
+      background: var(--green);
+      color: #fff;
+    }
+
+    /* 경로 로그 */
+    .path-log {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+
+    .path-log-title {
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+
+    .log-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .log-node {
+      background: var(--green-light);
+      color: var(--green);
+      border: 1.5px solid var(--green);
+      border-radius: 7px;
+      padding: 2px 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .log-arrow {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .log-cost {
+      background: #fff3e0;
+      color: #e65100;
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 0.73rem;
+      font-weight: 700;
+    }
+
+    /* 상태 메시지 */
+    .status-msg {
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 6px 0;
+      min-height: 22px;
+    }
+
+    .status-msg .msg-line {
+      display: block;
+    }
+
+    .status-msg.loading {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .status-msg.error {
+      color: #dc3545;
+      font-weight: 700;
+    }
+
+    /* 빈 상태 */
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px 0;
+      font-size: 0.85rem;
+    }
+
+    .empty-state .icon {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .anim-in {
+      animation: fadeIn 0.28s ease both;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+
+      #kakao-map {
+        min-height: 280px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 헤더 -->
+  <div class="page-header">
+    <span style="font-size:1.4rem">📍</span>
+    <h1>응급 병원 우선 추천 안내</h1>
+    <span class="badge-module">모듈 4 · Module D</span>
+    <a href="/" class="back-btn">← 메인으로</a>
+  </div>
+
+  <!-- 알고리즘 뱃지 -->
+  <div class="algo-badges">
+    <span class="ds-badge">자료구조 ① 그래프 (노드 + 간선)</span>
+    <span class="ds-badge">자료구조 ② 우선순위 큐 (Min-Heap)</span>
+    <span class="algo-badge">알고리즘 ① 인접 간선 기반 최단 후보 탐색</span>
+    <span class="algo-badge">알고리즘 ② Top-K 선택 알고리즘</span>
+  </div>
+
+  <div class="main-layout">
+
+    <!-- ── 좌측 패널 ── -->
+    <div class="left-panel">
+
+      <!-- 내 위치 입력 -->
+      <div>
+        <p class="panel-title">출발 위치 설정</p>
+        <label class="lbl" style="margin-top:8px">주소 또는 장소명 직접 입력</label>
+        <div class="addr-row">
+          <input class="inp" type="text" id="addrInput" placeholder="예: 성남시 분당구 판교역로" />
+          <button class="btn-search-addr" onclick="searchAddress()">검색</button>
+        </div>
+        <div class="status-msg" id="addr-status">주소나 장소명을 입력하고 검색하세요</div>
+
+        <label class="lbl" style="margin-top:6px">또는 현재 위치 사용</label>
+        <button class="btn-search-addr" style="width:100%; padding:9px; border-radius:10px; font-size:0.85rem;"
+          onclick="useMyLocation()">
+          현재 위치 자동 감지
+        </button>
+      </div>
+
+      <!-- 검색 반경 & 필터 -->
+      <div>
+        <p class="panel-title">⚙️ 검색 조건</p>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+          <div class="filter-item">
+            <label>검색 반경</label>
+            <input type="range" id="radius" min="500" max="10000" step="500" value="2000" oninput="updateFilter()" />
+            <span class="val-badge" id="radiusVal">2km</span>
+          </div>
+          <div class="filter-item">
+            <label>최대 결과</label>
+            <input type="range" id="maxResult" min="1" max="5" value="3" oninput="updateFilter()" />
+            <span class="val-badge" id="maxResultVal">3개</span>
+          </div>
+          <div>
+            <label class="lbl">이동 기준</label>
+            <select class="inp" id="routeMode" onchange="updateFilter()">
+              <option value="straight">직선거리</option>
+              <option value="car-distance">차량 최단경로</option>
+              <option value="car-time">차량 최단시간</option>
+            </select>
+            <div class="status-msg">
+              <span class="msg-line">도보 API는 카카오모빌리티 제휴 권한이 필요해</span>
+              <span class="msg-line">데모에서는 제외했습니다</span>
+            </div>
+          </div>
+          <label class="filter-check">
+            <input type="checkbox" id="emergencyOnly" />
+            24시간 응급만
+          </label>
+        </div>
+      </div>
+
+      <!-- 탐색 실행 -->
+      <button class="btn-run" id="btn-run" onclick="runSearch()" disabled>
+        병원 탐색 + 추천 계산
+      </button>
+
+      <!-- Top-K 선택 안내 -->
+      <div>
+        <p class="panel-title">그래프 + Top-K 추천</p>
+        <div class="status-msg" id="sort-status">
+          그래프 간선 가중치로 후보를 만들고 우선순위 큐로 Top-K를 선택합니다
+        </div>
+      </div>
+
+      <!-- 결과 리스트 -->
+      <div>
+        <p class="panel-title" id="result-title">추천 병원 (거리순)</p>
+        <div id="result-list" class="result-list" style="margin-top:8px;">
+          <div class="empty-state">
+            위치 설정 후 탐색을 시작하세요
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── 우측 패널 ── -->
+    <div class="right-panel">
+
+      <!-- 지도 헤더 -->
+      <div class="graph-header">
+        <h3>카카오맵 — 실시간 병원 위치</h3>
+        <div class="graph-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#198754"></div>내 위치
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#ff6b35"></div>응급 병원
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#2196f3"></div>일반 병원
+          </div>
+          <div class="legend-item">
+            <div style="width:28px;height:3px;background:linear-gradient(90deg,#198754,#ff6b35);border-radius:2px">
+            </div>추천 경로
+          </div>
+        </div>
+      </div>
+
+      <!-- 카카오맵 -->
+      <div id="kakao-map"></div>
+
+      <!-- 그래프 + Top-K SVG 시각화 -->
+      <svg id="graph-canvas" viewBox="0 0 820 180" xmlns="http://www.w3.org/2000/svg">
+        <text x="410" y="95" text-anchor="middle" font-size="13" fill="#aaa" font-family="Noto Sans KR, sans-serif">
+          탐색 후 그래프 노드와 경로 간선이 표시됩니다
+        </text>
+      </svg>
+
+      <!-- 힙 디버거 -->
+      <div class="step-debugger">
+        <div class="step-title">Top-K 우선순위 큐 (Min-Heap) 상태</div>
+        <div class="heap-items" id="heap-display">
+          <span style="color:var(--muted); font-size:0.76rem">탐색 전 · Top-K 선택 과정이 표시됩니다</span>
+        </div>
+      </div>
+
+      <!-- 추천 로그 -->
+      <div class="path-log">
+        <div class="path-log-title">그래프 / Top-K 추천 로그</div>
+        <div id="path-log-content">
+          <span style="color:var(--muted); font-size:0.78rem">탐색 결과가 여기에 표시됩니다.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  자료구조 & 알고리즘 구현                                 ║
+    // ║  ① 그래프 (노드 + 간선)    ② 우선순위 큐 (Min-Heap)       ║
+    // ║  ③ 인접 간선 후보 탐색     ④ Top-K 선택 알고리즘          ║
+    // ╚══════════════════════════════════════════════════════════╝
+
+    // ── ① 그래프 자료구조: 장소는 노드, 이동 경로는 가중치 간선 ──
+    class HospitalGraph {
+      constructor() {
+        this.nodes = [];
+        this.edges = [];
+      }
+      addNode(node) {
+        const idx = this.nodes.findIndex(item => item.id === node.id);
+        if (idx >= 0) this.nodes[idx] = { ...this.nodes[idx], ...node };
+        else this.nodes.push(node);
+      }
+      addEdge(from, to, weight, meta = {}) {
+        this.edges.push({ from, to, weight, ...meta });
+      }
+      getNode(id) {
+        return this.nodes.find(node => node.id === id);
+      }
+      getHospitals() {
+        return this.nodes.filter(node => node.type === 'hospital');
+      }
+      getEdgesFrom(id) {
+        return this.edges.filter(edge => edge.from === id);
+      }
+      hospitalCount() {
+        return this.getHospitals().length;
+      }
+    }
+
+    // ── ② 우선순위 큐 자료구조 (Min-Heap) ──
+    class MinHeap {
+      constructor() { this.heap = []; }
+      push(item) { this.heap.push(item); this._bubbleUp(this.heap.length - 1); }
+      pop() {
+        if (this.heap.length === 0) return null;
+        const top = this.heap[0];
+        const last = this.heap.pop();
+        if (this.heap.length > 0) { this.heap[0] = last; this._sinkDown(0); }
+        return top;
+      }
+      isEmpty() { return this.heap.length === 0; }
+      _priority(item) { return item.priority ?? item.dist ?? 0; }
+      _bubbleUp(idx) {
+        while (idx > 0) {
+          const p = Math.floor((idx - 1) / 2);
+          if (this._priority(this.heap[p]) <= this._priority(this.heap[idx])) break;
+          [this.heap[p], this.heap[idx]] = [this.heap[idx], this.heap[p]];
+          idx = p;
+        }
+      }
+      _sinkDown(idx) {
+        const n = this.heap.length;
+        while (true) {
+          let s = idx, l = 2 * idx + 1, r = 2 * idx + 2;
+          if (l < n && this._priority(this.heap[l]) < this._priority(this.heap[s])) s = l;
+          if (r < n && this._priority(this.heap[r]) < this._priority(this.heap[s])) s = r;
+          if (s === idx) break;
+          [this.heap[s], this.heap[idx]] = [this.heap[idx], this.heap[s]];
+          idx = s;
+        }
+      }
+    }
+
+    // ── ③ 인접 간선 기반 후보 탐색 알고리즘 ──
+    function findNearestHospitalsInGraph(hospitalGraph, k, radius) {
+      const originEdges = hospitalGraph.getEdgesFrom('origin');
+      const candidates = originEdges
+        .map(edge => ({ ...hospitalGraph.getNode(edge.to), edgeWeight: edge.weight }))
+        .filter(Boolean);
+      const filtered = candidates.filter(h => h.routeDistance <= radius);
+      const topKResult = selectTopKHospitals(filtered, k);
+
+      return {
+        candidates,
+        filtered,
+        topK: topKResult.topK,
+        heapLog: topKResult.heapLog,
+        radius
+      };
+    }
+
+    // ── ④ Top-K 선택 알고리즘 ──
+    function selectTopKHospitals(hospitals, k) {
+      const pq = new MinHeap();
+      const heapLog = [];
+
+      hospitals.forEach((hospital, index) => {
+        pq.push({ priority: hospital.dist, index, hospital });
+        heapLog.push({
+          action: 'push',
+          hospital,
+          cost: hospital.dist,
+          queueSnapshot: pq.heap.slice(0, 5).map(x => ({ hospital: x.hospital, cost: x.priority }))
+        });
+      });
+
+      const topK = [];
+      while (!pq.isEmpty() && topK.length < k) {
+        const item = pq.pop();
+        topK.push(item.hospital);
+        heapLog.push({
+          action: 'pop',
+          hospital: item.hospital,
+          cost: item.priority,
+          queueSnapshot: pq.heap.slice(0, 5).map(x => ({ hospital: x.hospital, cost: x.priority }))
+        });
+      }
+
+      return { topK, heapLog };
+    }
+
+    // ════════════════════════════════════════
+    //  전역 상태
+    // ════════════════════════════════════════
+    let map = null;
+    let myLat = null, myLng = null;
+    let myMarker = null;
+    let hospitalMarkers = [];
+    let polylines = [];
+    let hospitalGraph = new HospitalGraph(); // 내 위치와 병원을 노드/간선으로 표현하는 그래프
+    let fetchedHospitals = []; // 그래프 반경 필터를 통과한 병원 목록
+    let lastSelectionResult = null;
+    let activeHospitalId = null;
+
+    // ════════════════════════════════════════
+    //  카카오맵 초기화
+    // ════════════════════════════════════════
+    function isKakaoMapsReady() {
+      return window.kakao && kakao.maps && kakao.maps.services;
+    }
+
+    function describeGeoError(error) {
+      if (!window.isSecureContext) {
+        return '현재 위치는 http://localhost 또는 http://127.0.0.1 에서 실행해야 합니다';
+      }
+
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          return '위치 권한이 거부되었습니다. 브라우저 주소창의 위치 권한을 허용해주세요';
+        case error.POSITION_UNAVAILABLE:
+          return '현재 위치 정보를 가져올 수 없습니다. 기기 위치 서비스가 켜져 있는지 확인해주세요';
+        case error.TIMEOUT:
+          return '위치 확인 시간이 초과되었습니다. 다시 시도하거나 주소를 직접 입력해주세요';
+        default:
+          return '위치 감지 실패. 주소를 직접 입력해주세요';
+      }
+    }
+
+    function initMap(lat, lng) {
+      if (!isKakaoMapsReady()) {
+        setAddrStatus('카카오맵 SDK가 로드되지 않았습니다. 앱 키의 Web 플랫폼 도메인을 확인해주세요', 'error');
+        return false;
+      }
+
+      const container = document.getElementById('kakao-map');
+      const options = { center: new kakao.maps.LatLng(lat, lng), level: 5 };
+      map = new kakao.maps.Map(container, options);
+
+      // 내 위치 마커
+      if (myMarker) myMarker.setMap(null);
+      const markerImg = new kakao.maps.MarkerImage(
+        'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+        new kakao.maps.Size(24, 35)
+      );
+      myMarker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(lat, lng),
+        map,
+        image: markerImg,
+        title: '내 위치'
+      });
+
+      return true;
+    }
+
+    // ════════════════════════════════════════
+    //  주소/장소명 → 좌표 변환 (카카오 Geocoder + Places)
+    // ════════════════════════════════════════
+    function searchAddress() {
+      const addr = document.getElementById('addrInput').value.trim();
+      if (!addr) { setAddrStatus('주소나 장소명을 입력해주세요', 'error'); return; }
+
+      setAddrStatus('주소 검색 중...', 'loading');
+      const geocoder = new kakao.maps.services.Geocoder();
+      geocoder.addressSearch(addr, function (result, status) {
+        if (status === kakao.maps.services.Status.OK) {
+          myLat = parseFloat(result[0].y);
+          myLng = parseFloat(result[0].x);
+          if (initMap(myLat, myLng)) {
+            setAddrStatus(`위치 확인: ${result[0].address_name}`, '');
+            document.getElementById('btn-run').disabled = false;
+          }
+        } else {
+          searchPlaceKeyword(addr);
+        }
+      });
+    }
+
+    function searchPlaceKeyword(keyword) {
+      setAddrStatus('주소 검색 실패 · 장소명으로 다시 검색 중...', 'loading');
+      const places = new kakao.maps.services.Places();
+      places.keywordSearch(keyword, function (result, status) {
+        if (status === kakao.maps.services.Status.OK && result.length > 0) {
+          const place = result[0];
+          myLat = parseFloat(place.y);
+          myLng = parseFloat(place.x);
+          if (initMap(myLat, myLng)) {
+            setAddrStatus(`위치 확인: ${place.place_name} (${place.road_address_name || place.address_name || '주소 정보 없음'})`, '');
+            document.getElementById('btn-run').disabled = false;
+          }
+        } else {
+          setAddrStatus('주소나 장소명을 찾을 수 없습니다.', 'error');
+        }
+      });
+    }
+
+    // ════════════════════════════════════════
+    //  현재 위치 GPS 감지
+    // ════════════════════════════════════════
+    function useMyLocation() {
+      if (!navigator.geolocation) {
+        setAddrStatus('이 브라우저는 위치 감지를 지원하지 않습니다', 'error');
+        return;
+      }
+      setAddrStatus('📡 위치 감지 중...', 'loading');
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          myLat = pos.coords.latitude;
+          myLng = pos.coords.longitude;
+          if (initMap(myLat, myLng)) {
+            setAddrStatus('✅ 현재 위치 확인 완료', '');
+            document.getElementById('btn-run').disabled = false;
+          }
+        },
+        error => setAddrStatus(describeGeoError(error), 'error'),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    // ════════════════════════════════════════
+    //  카카오 장소 검색 API → 동물병원 목록
+    // ════════════════════════════════════════
+    async function getRouteWeight(from, to) {
+      const mode = document.getElementById('routeMode').value;
+      const straightDistance = haversine(from.lat, from.lng, to.lat, to.lng);
+      const routeMode = getRouteMode();
+
+      if (mode === 'straight') {
+        return {
+          weight: straightDistance,
+          distance: straightDistance,
+          duration: null,
+          path: [
+            { lat: from.lat, lng: from.lng },
+            { lat: to.lat, lng: to.lng }
+          ],
+          source: 'straight'
+        };
+      }
+
+      const params = new URLSearchParams({
+        origin: `${from.lng},${from.lat}`,
+        destination: `${to.lng},${to.lat}`,
+        profile: routeMode.profile,
+        priority: routeMode.priority
+      });
+
+      const res = await fetch(`/api/directions?${params.toString()}`);
+      if (!res.ok) throw new Error('Directions API request failed');
+
+      const route = await res.json();
+      if (!Number.isFinite(route.distance) || !Number.isFinite(route.duration)) {
+        throw new Error('Directions API returned invalid route metrics');
+      }
+      return {
+        weight: routeMode.metric === 'time' ? route.duration : route.distance,
+        distance: route.distance,
+        duration: route.duration,
+        path: route.path && route.path.length > 0 ? route.path : [
+          { lat: from.lat, lng: from.lng },
+          { lat: to.lat, lng: to.lng }
+        ],
+        source: route.source || 'kakao-directions'
+      };
+    }
+
+    function getRouteMode() {
+      const mode = document.getElementById('routeMode').value;
+      const [profile, metric] = mode.split('-');
+
+      if (mode === 'straight') {
+        return {
+          profile: 'straight',
+          metric: 'distance',
+          priority: 'DISTANCE',
+          label: '직선거리',
+          shortLabel: '직선'
+        };
+      }
+
+      const labels = {
+        car: '차량'
+      };
+
+      return {
+        profile,
+        metric: metric === 'time' ? 'time' : 'distance',
+        priority: metric === 'time' ? 'TIME' : 'DISTANCE',
+        label: `${labels[profile] || '이동'} ${metric === 'time' ? '최단시간' : '최단경로'}`,
+        shortLabel: labels[profile] || '도로'
+      };
+    }
+
+    function getRouteModeLabel() {
+      return getRouteMode().label;
+    }
+
+    function formatDistance(m) {
+      if (!Number.isFinite(m)) return '-';
+      return m >= 1000 ? (m / 1000).toFixed(1) + 'km' : Math.round(m) + 'm';
+    }
+
+    function formatDuration(sec) {
+      if (!Number.isFinite(sec)) return '-';
+      const min = Math.max(1, Math.round(sec / 60));
+      return min >= 60 ? `${Math.floor(min / 60)}시간 ${min % 60}분` : `${min}분`;
+    }
+
+    function formatCost(value) {
+      return getRouteMode().metric === 'time'
+        ? formatDuration(value)
+        : formatDistance(value);
+    }
+
+    function formatNodeCost(value) {
+      if (!Number.isFinite(value)) return '';
+      if (getRouteMode().metric === 'time') {
+        return Math.max(1, Math.round(value / 60)) + '분';
+      }
+      return value >= 1000 ? (value / 1000).toFixed(1) + 'k' : Math.round(value) + 'm';
+    }
+
+    function setRunButton(isLoading, text) {
+      const btn = document.getElementById('btn-run');
+      btn.disabled = isLoading;
+      btn.textContent = text || '⚡ 병원 탐색 + 추천 계산';
+    }
+
+    function runSearch() {
+      if (!myLat || !myLng) { alert('먼저 위치를 설정해주세요!'); return; }
+
+      const radius = parseInt(document.getElementById('radius').value);
+      const emergOnly = document.getElementById('emergencyOnly').checked;
+      const origin = { lat: myLat, lng: myLng };
+
+      setRunButton(true, '병원 검색 중...');
+
+      hospitalMarkers.forEach(m => m.setMap(null));
+      hospitalMarkers = [];
+      polylines.forEach(p => p.setMap(null));
+      polylines = [];
+
+      const ps = new kakao.maps.services.Places();
+      const keyword = emergOnly ? '24시간 동물병원' : '동물병원';
+
+      ps.keywordSearch(keyword, async function (data, status, pagination) {
+        if (status !== kakao.maps.services.Status.OK) {
+          setRunButton(false);
+          alert('병원 검색에 실패했습니다. 잠시 후 다시 시도해주세요.');
+          return;
+        }
+
+        try {
+          setRunButton(true, '도로 경로 계산 중...');
+
+          const rawHospitals = data.map(p => ({
+            id: p.id,
+            name: p.place_name,
+            address: p.road_address_name || p.address_name,
+            phone: p.phone,
+            lat: parseFloat(p.y),
+            lng: parseFloat(p.x),
+            url: p.place_url,
+            emergency: p.place_name.includes('24') || p.place_name.includes('응급') || p.place_name.includes('야간'),
+          }));
+
+          hospitalGraph = new HospitalGraph();
+          hospitalGraph.addNode({ id: 'origin', type: 'origin', name: '내 위치', lat: myLat, lng: myLng });
+          rawHospitals.forEach(h => hospitalGraph.addNode({ ...h, type: 'hospital' }));
+
+          for (const h of hospitalGraph.getHospitals()) {
+            try {
+              const route = await getRouteWeight(origin, h);
+              const updatedHospital = {
+                ...h,
+                dist: route.weight,
+                routeDistance: route.distance,
+                routeDuration: route.duration,
+                routePath: route.path,
+                routeSource: route.source
+              };
+              hospitalGraph.addNode(updatedHospital);
+              hospitalGraph.addEdge('origin', h.id, route.weight, {
+                routeDistance: route.distance,
+                routeDuration: route.duration,
+                routeSource: route.source
+              });
+            } catch (err) {
+              const fallbackDistance = haversine(myLat, myLng, h.lat, h.lng);
+              const updatedHospital = {
+                ...h,
+                dist: fallbackDistance,
+                routeDistance: fallbackDistance,
+                routeDuration: null,
+                routePath: [
+                  { lat: myLat, lng: myLng },
+                  { lat: h.lat, lng: h.lng }
+                ],
+                routeSource: 'straight-fallback'
+              };
+              hospitalGraph.addNode(updatedHospital);
+              hospitalGraph.addEdge('origin', h.id, fallbackDistance, {
+                routeDistance: fallbackDistance,
+                routeDuration: null,
+                routeSource: 'straight-fallback'
+              });
+            }
+          }
+
+          const maxCount = parseInt(document.getElementById('maxResult').value);
+          const selectionResult = findNearestHospitalsInGraph(hospitalGraph, maxCount, radius);
+          fetchedHospitals = selectionResult.filtered;
+          lastSelectionResult = selectionResult;
+          updateSortStatus(selectionResult);
+
+          const topHospitals = selectionResult.topK;
+
+          // 지도에 마커 + 경로 표시
+          renderMapMarkers(topHospitals);
+
+          // 그래프 + Top-K 추천 과정 시각화
+          renderSelectionDiagram(topHospitals, selectionResult);
+
+          // 결과 카드
+          renderResults(topHospitals);
+
+          // 힙 디버거
+          renderHeapLog(selectionResult.heapLog);
+
+          // 추천 로그
+          renderSelectionLog(topHospitals, selectionResult);
+        } finally {
+          setRunButton(false);
+        }
+
+      }, {
+        location: new kakao.maps.LatLng(myLat, myLng),
+        radius,
+        sort: kakao.maps.services.SortBy.DISTANCE
+      });
+    }
+
+    // ════════════════════════════════════════
+    //  Haversine 공식 — 두 좌표 간 거리(m)
+    // ════════════════════════════════════════
+    function haversine(lat1, lng1, lat2, lng2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    // ════════════════════════════════════════
+    //  카카오맵 마커 & 경로선 렌더링
+    // ════════════════════════════════════════
+    function renderMapMarkers(hospitals) {
+      const infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+
+      hospitals.forEach((h, i) => {
+        const position = new kakao.maps.LatLng(h.lat, h.lng);
+        const color = h.emergency ? '#ff6b35' : '#2196f3';
+
+        // 커스텀 마커 오버레이
+        const content = `
+          <div class="map-hospital-marker" data-hospital-id="${h.id}" style="--pin-color:${color}"
+               onclick="setActiveHospital('${h.id}')">
+            <div class="map-hospital-pin">${i + 1}</div>
+            <div class="map-hospital-label">
+              ${h.name.length > 8 ? h.name.substring(0, 8) + '...' : h.name}
+            </div>
+          </div>`;
+
+        const overlay = new kakao.maps.CustomOverlay({ position, content, yAnchor: 1 });
+        overlay.setMap(map);
+        hospitalMarkers.push(overlay);
+
+        if (i === 0) {
+          const routePath = h.routePath && h.routePath.length > 1
+            ? h.routePath
+            : [{ lat: myLat, lng: myLng }, { lat: h.lat, lng: h.lng }];
+          const linePath = routePath.map(p => new kakao.maps.LatLng(p.lat, p.lng));
+          const polyline = new kakao.maps.Polyline({
+            path: linePath, strokeWeight: 4, strokeColor: '#198754',
+            strokeOpacity: 0.85, strokeStyle: 'solid'
+          });
+          polyline.setMap(map);
+          polylines.push(polyline);
+        }
+      });
+
+      // 지도 범위를 마커들 포함하도록 조정
+      if (hospitals.length > 0) {
+        const bounds = new kakao.maps.LatLngBounds();
+        bounds.extend(new kakao.maps.LatLng(myLat, myLng));
+        hospitals.forEach(h => bounds.extend(new kakao.maps.LatLng(h.lat, h.lng)));
+        map.setBounds(bounds);
+      }
+    }
+
+    // ════════════════════════════════════════
+    //  SVG 그래프 + Top-K 추천 과정 시각화
+    // ════════════════════════════════════════
+    function renderSelectionDiagram(hospitals, selectionResult) {
+      const svg = document.getElementById('graph-canvas');
+      svg.innerHTML = '';
+      if (hospitals.length === 0) {
+        svg.innerHTML = `<text x="410" y="95" text-anchor="middle" font-size="13" fill="#aaa" font-family="Noto Sans KR, sans-serif">반경 내 추천 가능한 병원이 없습니다</text>`;
+        return;
+      }
+
+      const W = 820, H = 180;
+      const nodes = [
+        { id: 'origin', label: '내위치', x: 80, y: H / 2, color: '#198754' },
+        ...hospitals.map((h, i) => ({
+          id: h.id,
+          label: h.name.length > 5 ? h.name.substring(0, 5) + '…' : h.name,
+          x: 200 + i * Math.floor((W - 250) / Math.max(hospitals.length, 1)),
+          y: i % 2 === 0 ? 55 : H - 55,
+          color: h.emergency ? '#ff6b35' : '#2196f3'
+        }))
+      ];
+
+      const nodeMap = {};
+      nodes.forEach(n => nodeMap[n.id] = n);
+
+      // 엣지
+      hospitals.forEach((h, i) => {
+        const from = nodeMap['origin'], to = nodeMap[h.id];
+        const isBest = i === 0;
+
+        if (isBest) {
+          const glow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          glow.setAttribute('x1', from.x); glow.setAttribute('y1', from.y);
+          glow.setAttribute('x2', to.x); glow.setAttribute('y2', to.y);
+          glow.setAttribute('stroke', '#a5d6a7'); glow.setAttribute('stroke-width', '8');
+          glow.setAttribute('stroke-linecap', 'round'); glow.setAttribute('opacity', '0.5');
+          svg.appendChild(glow);
+        }
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
+        line.setAttribute('stroke', isBest ? '#198754' : '#ddd');
+        line.setAttribute('stroke-width', isBest ? '2.5' : '1.5');
+        line.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(line);
+
+        // 추천 비용 라벨
+        const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2;
+        const distLabel = formatCost(h.dist);
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', mx - 22); bg.setAttribute('y', my - 8); bg.setAttribute('width', 44); bg.setAttribute('height', 14);
+        bg.setAttribute('rx', 4); bg.setAttribute('fill', isBest ? '#e8f5e9' : '#f8f9fa');
+        bg.setAttribute('stroke', isBest ? '#198754' : '#ddd'); bg.setAttribute('stroke-width', '1');
+        svg.appendChild(bg);
+        const tw = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        tw.setAttribute('x', mx); tw.setAttribute('y', my + 3); tw.setAttribute('text-anchor', 'middle');
+        tw.setAttribute('font-size', '8'); tw.setAttribute('fill', isBest ? '#198754' : '#aaa');
+        tw.setAttribute('font-weight', isBest ? '700' : '400');
+        tw.setAttribute('font-family', 'Noto Sans KR, sans-serif');
+        tw.textContent = distLabel; svg.appendChild(tw);
+      });
+
+      // 노드
+      nodes.forEach(n => {
+        const selected = n.id === 'origin' || hospitals.some(h => h.id === n.id);
+        const r = n.id === 'origin' ? 22 : 18;
+
+        const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        ring.classList.add('graph-node-ring');
+        ring.dataset.hospitalId = n.id;
+        ring.dataset.baseStroke = n.color;
+        ring.setAttribute('cx', n.x); ring.setAttribute('cy', n.y); ring.setAttribute('r', r + 5);
+        ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', n.color);
+        ring.setAttribute('stroke-width', '1.5'); ring.setAttribute('opacity', '0.3');
+        svg.appendChild(ring);
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.classList.add('graph-node-circle');
+        circle.dataset.hospitalId = n.id;
+        circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', r);
+        circle.setAttribute('fill', n.color); circle.setAttribute('opacity', selected ? '1' : '0.4');
+        svg.appendChild(circle);
+
+        // 추천 순위 표시
+        if (n.id !== 'origin') {
+          const h = hospitals.find(item => item.id === n.id);
+          const dl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          dl.setAttribute('x', n.x); dl.setAttribute('y', n.y + 4);
+          dl.setAttribute('text-anchor', 'middle'); dl.setAttribute('font-size', '8.5');
+          dl.setAttribute('font-weight', '900'); dl.setAttribute('fill', '#fff');
+          dl.setAttribute('font-family', 'Noto Sans KR, sans-serif');
+          dl.textContent = `TOP ${hospitals.indexOf(h) + 1}`;
+          svg.appendChild(dl);
+        } else if (n.id === 'origin') {
+          const st = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          st.setAttribute('x', n.x); st.setAttribute('y', n.y + 4);
+          st.setAttribute('text-anchor', 'middle'); st.setAttribute('font-size', '9');
+          st.setAttribute('font-weight', '900'); st.setAttribute('fill', '#fff');
+          st.setAttribute('font-family', 'Noto Sans KR, sans-serif');
+          st.textContent = '출발'; svg.appendChild(st);
+        }
+
+        // 레이블
+        const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lbl.setAttribute('x', n.x); lbl.setAttribute('y', n.y + r + 13);
+        lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('font-size', '8.5');
+        lbl.setAttribute('fill', selected ? '#1a2e1a' : '#bbb');
+        lbl.setAttribute('font-weight', selected ? '700' : '400');
+        lbl.setAttribute('font-family', 'Noto Sans KR, sans-serif');
+        lbl.textContent = n.label; svg.appendChild(lbl);
+      });
+
+      const caption = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      caption.setAttribute('x', W - 14); caption.setAttribute('y', 18);
+      caption.setAttribute('text-anchor', 'end'); caption.setAttribute('font-size', '9.5');
+      caption.setAttribute('fill', '#6c757d'); caption.setAttribute('font-weight', '700');
+      caption.setAttribute('font-family', 'Noto Sans KR, sans-serif');
+      caption.textContent = `그래프 후보 ${selectionResult.filtered.length}개 중 Top-${hospitals.length} 선택`;
+      svg.appendChild(caption);
+
+      syncActiveHospital();
+    }
+
+    // ════════════════════════════════════════
+    //  결과 카드 렌더링
+    // ════════════════════════════════════════
+    function renderResults(hospitals) {
+      const container = document.getElementById('result-list');
+      if (hospitals.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="icon">😢</div>반경 내 병원이 없습니다.<br>검색 반경을 늘려보세요</div>`;
+        return;
+      }
+      container.innerHTML = hospitals.map((h, i) => {
+        const costLabel = formatCost(h.dist);
+        const routeMode = getRouteMode();
+        const routeMeta = h.routeDuration
+          ? `${formatDistance(h.routeDistance)} · ${formatDuration(h.routeDuration)}`
+          : formatDistance(h.routeDistance);
+        const fallbackTag = h.routeSource === 'straight-fallback'
+          ? '<span style="color:#dc3545; font-size:0.7rem; font-weight:700;">경로 API 실패 · 직선거리 대체</span><br>'
+          : '';
+        return `
+          <div class="result-card ${h.emergency ? 'emergency' : ''} anim-in" style="animation-delay:${i * 0.07}s"
+               data-hospital-id="${h.id}"
+               onmouseenter="setActiveHospital('${h.id}')"
+               onclick="focusHospital(${h.lat}, ${h.lng}, '${h.id}')">
+            <span class="rank-badge">${i === 0 ? 'TOP 1' : `TOP ${i + 1}`}</span>
+            <div class="hospital-name">${h.name}</div>
+            <div class="hospital-meta">${h.phone || '전화번호 없음'}</div>
+            <span class="distance-tag">${routeMode.metric === 'time' ? '⏱' : '📏'} ${costLabel}</span>
+            <span class="distance-tag">${routeMode.shortLabel} ${routeMeta}</span>
+            <span class="addr-tag">📌 ${h.address || '주소 없음'}</span>
+            ${fallbackTag}
+            ${h.url ? `<br><a href="${h.url}" target="_blank" style="font-size:0.72rem; color:var(--green); font-weight:700;">카카오맵에서 보기 →</a>` : ''}
+          </div>`;
+      }).join('');
+      syncActiveHospital();
+    }
+
+    function focusHospital(lat, lng, hospitalId) {
+      if (!map) return;
+      setActiveHospital(hospitalId);
+      map.panTo(new kakao.maps.LatLng(lat, lng));
+    }
+
+    function setActiveHospital(hospitalId) {
+      activeHospitalId = hospitalId;
+      syncActiveHospital();
+    }
+
+    function syncActiveHospital() {
+      document.querySelectorAll('.result-card[data-hospital-id]').forEach(card => {
+        card.classList.toggle('is-active', card.dataset.hospitalId === activeHospitalId);
+      });
+
+      document.querySelectorAll('.map-hospital-marker[data-hospital-id]').forEach(marker => {
+        marker.classList.toggle('is-active', marker.dataset.hospitalId === activeHospitalId);
+      });
+
+      document.querySelectorAll('.graph-node-ring[data-hospital-id], .graph-node-circle[data-hospital-id]').forEach(node => {
+        const isActive = node.dataset.hospitalId === activeHospitalId;
+        if (node.classList.contains('graph-node-ring')) {
+          node.setAttribute('stroke-width', isActive ? '4' : '1.5');
+          node.setAttribute('opacity', isActive ? '0.85' : '0.3');
+          node.setAttribute('stroke', isActive ? '#ffc107' : node.dataset.baseStroke);
+        }
+        if (node.classList.contains('graph-node-circle')) {
+          node.setAttribute('stroke', isActive ? '#ffc107' : 'none');
+          node.setAttribute('stroke-width', isActive ? '3' : '0');
+        }
+      });
+    }
+
+    // ════════════════════════════════════════
+    //  그래프 + Top-K 상태 표시
+    // ════════════════════════════════════════
+    function updateSortStatus(selectionResult) {
+      const el = document.getElementById('sort-status');
+      if (!el) return;
+      const modeLabel = getRouteModeLabel();
+      el.innerHTML = `✅ 그래프 노드 ${selectionResult.candidates.length + 1}개 · 경로 간선 ${selectionResult.candidates.length}개 · <strong>${modeLabel} 기준 Top-${selectionResult.topK.length}</strong> 선택 완료`;
+    }
+
+    // ════════════════════════════════════════
+    //  힙 디버거 렌더링
+    // ════════════════════════════════════════
+    function renderHeapLog(heapLog) {
+      const el = document.getElementById('heap-display');
+      if (!heapLog || heapLog.length === 0) {
+        el.innerHTML = '<span style="color:var(--muted); font-size:0.75rem">선택 가능한 후보가 없어 큐가 비어있습니다</span>';
+        return;
+      }
+      const popLogs = heapLog.filter(log => log.action === 'pop');
+      const last = popLogs[popLogs.length - 1] || heapLog[heapLog.length - 1];
+      const hospitalName = last.hospital?.name || '병원';
+      let html = `<span class="heap-item popped">${last.action === 'pop' ? 'Top-K 선택' : '큐 삽입'}: ${hospitalName.length > 8 ? hospitalName.substring(0, 8) + '…' : hospitalName} (${formatCost(last.cost)})</span>`;
+      last.queueSnapshot.forEach(q => {
+        const lbl = q.hospital?.name || '병원';
+        html += `<span class="heap-item">${lbl.length > 6 ? lbl.substring(0, 6) + '…' : lbl}: ${formatCost(q.cost)}</span>`;
+      });
+      if (last.queueSnapshot.length === 0) html += `<span style="color:var(--muted); font-size:0.75rem">큐 비어있음 또는 Top-K 선택 완료</span>`;
+      el.innerHTML = html;
+    }
+
+    // ════════════════════════════════════════
+    //  추천 로그 렌더링
+    // ════════════════════════════════════════
+    function renderSelectionLog(hospitals, selectionResult) {
+      const el = document.getElementById('path-log-content');
+      if (hospitals.length === 0) { el.innerHTML = '<span style="color:var(--muted)">결과 없음</span>'; return; }
+      const modeLabel = getRouteModeLabel();
+      const summary = `<div class="log-steps">
+        <span class="log-node">노드 ${selectionResult.candidates.length + 1}개</span>
+        <span class="log-arrow">→</span>
+        <span class="log-node">인접 간선 후보 ${selectionResult.filtered.length}개</span>
+        <span class="log-arrow">→</span>
+        <span class="log-node">Top-K ${hospitals.length}개</span>
+      </div>`;
+      const rows = hospitals.map((h, i) => {
+        return `<div class="log-steps">
+          <span class="log-node">TOP ${i + 1}</span>
+          <span class="log-arrow">→</span>
+          <span class="log-node">${h.name.length > 14 ? h.name.substring(0, 14) + '…' : h.name}</span>
+          <span class="log-cost">${modeLabel} ${formatCost(h.dist)}</span>
+        </div>`;
+      }).join('');
+      el.innerHTML = summary + rows;
+    }
+
+    // ════════════════════════════════════════
+    //  유틸
+    // ════════════════════════════════════════
+    function setAddrStatus(msg, type) {
+      const el = document.getElementById('addr-status');
+      el.textContent = msg;
+      el.className = 'status-msg' + (type ? ' ' + type : '');
+    }
+
+    function updateFilter() {
+      const r = parseInt(document.getElementById('radius').value);
+      document.getElementById('radiusVal').textContent = r >= 1000 ? (r / 1000) + 'km' : r + 'm';
+      document.getElementById('maxResultVal').textContent = document.getElementById('maxResult').value + '개';
+      document.getElementById('result-title').textContent = `🏥 추천 병원 (${getRouteModeLabel()}순)`;
+    }
+
+    // Enter 키로 주소 검색
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('addrInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') searchAddress();
+      });
+    });
+  </script>
+</body>
+
+</html>

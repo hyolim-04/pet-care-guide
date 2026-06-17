@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>반려동물 건강 가이드 - 증상 검색 엔진 (Python 버전)</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .search-container {
+        position: relative;
+      }
+      .autocomplete-box {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+      }
+      .autocomplete-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .autocomplete-item:hover {
+        background-color: #e8f5e9;
+        color: #198754;
+      }
+      .tag-symptom {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #e9ecef;
+        color: #495057;
+        border-radius: 20px;
+        padding: 6px 14px;
+        display: inline-block;
+        margin-right: 6px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .tag-symptom:hover {
+        background-color: #198754;
+        color: white;
+      }
+      /* 해시태그가 선택되었을 때 활성화 상태를 고정해주는 스타일 */
+      .tag-symptom.active-tag {
+        background-color: #198754 !important;
+        color: white !important;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(25, 135, 84, 0.25);
+      }
+      .guide-step {
+        border-left: 3px solid #20c997;
+        padding-left: 15px;
+        margin-bottom: 12px;
+      }
+      .tree-container {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 14px;
+        padding: 20px;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 2.2;
+        overflow-x: auto;
+      }
+      .tree-node {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 6px;
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        transition: all 0.25s ease;
+      }
+      .tree-node.visiting {
+        background-color: #fff3cd !important;
+        color: #664d03 !important;
+        border-color: #ffc107 !important;
+        font-weight: bold;
+        transform: scale(1.05);
+        box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+      }
+      .tree-node.fail {
+        background-color: #e9ecef !important;
+        color: #adb5bd !important;
+        border-color: #dee2e6 !important;
+        opacity: 0.7;
+      }
+      .tree-node.hit {
+        background-color: #198754 !important;
+        color: white !important;
+        border-color: #198754 !important;
+        font-weight: bold !important;
+        box-shadow: 0 0 10px rgba(25, 135, 84, 0.5);
+        transform: scale(1.05);
+      }
+
+      /* 위험 단계 애니메이션 (Red) */
+      @keyframes pulse-red {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+        70% {
+          transform: scale(1.02);
+          box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+      }
+
+      /* 보통/낮음 단계 애니메이션 (Orange)  */
+      @keyframes pulse-orange {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(237, 134, 38, 0.7);
+        }
+        70% {
+          transform: scale(1.02);
+          box-shadow: 0 0 0 12px rgba(237, 134, 38, 0);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(237, 134, 38, 0);
+        }
+      }
+
+      .btn-emergency-link {
+        display: block !important;
+        border: none !important;
+        font-weight: bold !important;
+        border-radius: 14px !important;
+        padding: 16px !important;
+        width: 100% !important;
+        font-size: 16px !important;
+        transition: all 0.2s ease !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      .btn-danger-mode {
+        background-color: #dc3545 !important;
+        color: white !important;
+        animation: pulse-red 2s infinite !important;
+      }
+      .btn-warning-mode {
+        background-color: #ed8626 !important;
+        color: white !important;
+        animation: pulse-orange 2s infinite !important;
+      }
+      .console-log {
+        background-color: #212529;
+        color: #0dfd5a;
+        font-family: "Courier New", Courier, monospace;
+        padding: 14px;
+        border-radius: 14px;
+        height: 110px;
+        overflow-y: auto;
+        font-size: 13px;
+      }
+      .badge-danger-mode {
+        background: #dc3545;
+        color: white;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .badge-normal-mode {
+        background: #fd7e14;
+        color: white;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .badge-low-mode {
+        background: #6c757d;
+        color: white;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .dog-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 50px;
+        border: 2px solid #dee2e6;
+        background: white;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.88rem;
+        transition: all 0.2s;
+        margin: 4px;
+      }
+      .dog-chip.selected {
+        border-color: #dc3545;
+        background: #fdf2f4;
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="card p-4 mb-4"
+      style="border-radius: 16px; border: 1px solid #e9ecef"
+    >
+      <h5 class="mb-3">🐶 대조 분석 대상 강아지 선택</h5>
+      <div id="dog-chips">
+        <span class="text-muted" style="font-size: 0.87rem"
+          >강아지 목록 인프라 로드 중...</span
+        >
+      </div>
+    </div>
+
+    <div class="container py-2">
+      <div class="row justify-content-center">
+        <div class="card project-card p-4">
+          <h2 class="text-success mb-2">
+            🔍 지능형 반려견 증상 검색 엔진 & 구조 시각화 (Python Backend)
+          </h2>
+          <p class="text-muted small">
+            # 백엔드 Python(Flask) 서버에서 고속 Fetch API 통신을 통해
+            실시간으로 처리하는 알고리즘 트랙킹 시스템입니다.
+          </p>
+          <hr />
+
+          <div class="search-container mb-2">
+            <div
+              id="chronicDiseaseBanner"
+              class="alert alert-warning d-none mb-3"
+              style="border-radius: 12px"
+            >
+              <span class="fw-bold">⚠️ 만성 질환 연동 경고:</span>
+              현재 관리 중인 반려견은
+              <span
+                id="chronicDiseaseName"
+                class="badge bg-danger text-white"
+              ></span
+              >을(를) 앓고 있습니다. 관련 증상 검색 시 대처 지침을 더욱 철저히
+              준수하세요!
+            </div>
+            <label class="form-label fs-5">🐕 강아지의 증상을 입력하세요</label>
+            <div class="input-group">
+              <input
+                type="text"
+                id="searchInput"
+                class="form-control form-control-lg"
+                placeholder="구토, 설사, 눈물, 기침 등을 입력하거나 하단 해시태그를 클릭하세요"
+                autocomplete="off"
+                oninput="handleSearchInput()"
+                style="font-size: 16px"
+              />
+              <button class="btn btn-success px-4" onclick="executeKMPSearch()">
+                가이드 정밀 분석
+              </button>
+            </div>
+            <div id="autocompleteBox" class="autocomplete-box d-none"></div>
+          </div>
+
+          <div class="mb-4">
+            <span class="small text-muted me-2 fw-bold"
+              >💡 자주 찾는 증상:</span
+            >
+            <div id="recommendedTags" class="d-inline-block">
+              {% for kw in keywords %}
+              <span
+                id="tag-item-{{ kw }}"
+                class="tag-symptom"
+                onclick="selectKeyword('{{ kw }}')"
+                ># {{ kw }}</span
+              >
+              {% endfor %}
+            </div>
+          </div>
+
+          <div
+            id="resultCard"
+            class="card project-card p-4 d-none bg-white border shadow-none"
+          >
+            <div class="row g-4">
+              <div class="col-md-6 border-end">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-3"
+                >
+                  <h3 id="diseaseName" class="text-dark mb-0 fs-4">
+                    🔍 알고리즘 탐색 중...
+                  </h3>
+                  <span id="dangerBadge" class="badge"></span>
+                </div>
+                <h5 class="text-secondary mb-4" style="font-size: 14px">
+                  📋 소관 카테고리:
+                  <span id="diseaseCategory" class="text-pet-main">-</span>
+                </h5>
+                <h5 class="fw-bold text-success mb-3" style="font-size: 16px">
+                  🩺 단계별 응급 조치 지침 (Linked List 구조)
+                </h5>
+                <div id="stepContainer" class="mb-4"></div>
+                <h5 class="fw-bold text-danger mb-2" style="font-size: 16px">
+                  ⚠️ 커뮤니티 후기 위험 패턴 필터링 (KMP)
+                </h5>
+                <div
+                  id="kmpAlertArea"
+                  class="p-3 bg-light rounded border mb-4"
+                ></div>
+
+                <div
+                  id="emergencyLinkContainer"
+                  class="d-none mt-3"
+                  style="width: 100%; display: block"
+                >
+                  <button
+                    id="emergencyButton"
+                    class="btn-emergency-link"
+                    onclick="triggerEmergencyHotlink()"
+                  >
+                    🚨 위험 단계 감지: 현재 위치 기반 24시 응급 병원 최단 경로
+                    안내 바로가기 ➡️
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <h5 class="fw-bold text-dark mb-3" style="font-size: 18px">
+                  🌳 백엔드 자료구조: DFS 계층 트리 실시간 순회 추적도
+                </h5>
+                <p class="small text-muted mb-2">
+                  <span class="badge bg-warning text-dark me-1"
+                    >노란색: 탐색 중</span
+                  >
+                  <span class="badge bg-secondary me-1"
+                    >회색: 탈락(Backtrack)</span
+                  >
+                  <span class="badge bg-success">녹색: 탐색성공(HIT)</span>
+                </p>
+                <div id="visualTreeContainer" class="tree-container">
+                  반려동물질환<br />
+                  ├──
+                  <span id="node-소화기질환" class="tree-node">소화기질환</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-급성위염" class="tree-node">급성위염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(구토)</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-급성장염" class="tree-node">급성장염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(설사)</span
+                  ><br />
+                  ├──
+                  <span id="node-안과이비인후과" class="tree-node"
+                    >안과이비인후과</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-안구유루증" class="tree-node">안구유루증</span>
+                  <span style="color: #adb5bd; font-size: 11px">(눈물)</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-외이도염" class="tree-node">외이도염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(귀긁음)</span
+                  ><br />
+                  ├──
+                  <span id="node-호흡기치과" class="tree-node">호흡기치과</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-기관지염" class="tree-node">기관지염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(기침)</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-치주염" class="tree-node">치주염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(입냄새)</span
+                  ><br />
+                  ├──
+                  <span id="node-피부신경계" class="tree-node">피부신경계</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-아토피피부염" class="tree-node"
+                    >아토피피부염</span
+                  >
+                  <span style="color: #adb5bd; font-size: 11px">(몸긁음)</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-열사병" class="tree-node">열사병</span>
+                  <span style="color: #adb5bd; font-size: 11px">(헥헥거림)</span
+                  ><br />
+                  └──
+                  <span id="node-응급기저질환" class="tree-node"
+                    >응급기저질환</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-슬개골탈구" class="tree-node">슬개골탈구</span>
+                  <span style="color: #adb5bd; font-size: 11px"
+                    >(뒷다리절뚝)</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-급성신부전" class="tree-node">급성신부전</span>
+                  <span style="color: #adb5bd; font-size: 11px">(포도먹음)</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-심장원성실신" class="tree-node"
+                    >심장원성실신</span
+                  >
+                  <span style="color: #adb5bd; font-size: 11px">(기절)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h5 class="text-secondary mt-3 fs-6">
+            💻 증상 검색 백엔드 알고리즘 터미널
+          </h5>
+          <div id="console" class="console-log">
+            [System] Ajax 기반 고속 데이터 연산 인프라 가동 완료.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "";
+      let dogsList = [];
+      let selectedDogId = null;
+
+      function logMessage(msg) {
+        const consoleDiv = document.getElementById("console");
+        if (consoleDiv) {
+          consoleDiv.innerHTML += `<br>[Python-Engine] ${msg}`;
+          consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+      }
+
+      //페이지 로드 시 모듈 A 인프라 연동 엔진
+
+      window.onload = async function () {
+        try {
+          // 모듈 A 인프라 바스켓으로부터 실시간 등록 강아지 목록 Fetch
+          const res = await fetch(API + "/api/dogs");
+          dogsList = await res.json();
+        } catch (e) {
+          console.error("인프라 데이터 연동 실패:", e);
+          logMessage(
+            "[안내] 모듈 A 인프라 바인딩 대기 중 (일반 검색 모드 활성화).",
+          );
+        }
+
+        // 강아지 목록이 있을 때만 칩 선택기 활성화 (없어도 튕기지 않고 일반 모드 유지)
+        if (dogsList && dogsList.length > 0) {
+          renderDogChips();
+        } else {
+          logMessage(
+            "[안내] 등록된 반려견 프로필이 없어 일반 자율 검색 모드로 대기합니다.",
+          );
+        }
+
+        // 모듈 B 대시보드 내비게이션 연속성 유지용 자동 선택 동기화
+        const rawProfile = localStorage.getItem("module1_profile");
+        if (rawProfile && rawProfile !== "undefined" && rawProfile !== "null") {
+          try {
+            const p = JSON.parse(rawProfile);
+            if (
+              p.dog_id &&
+              dogsList &&
+              dogsList.find((d) => d.id === p.dog_id)
+            ) {
+              selectDog(p.dog_id);
+            }
+          } catch (err) {
+            console.error("로컬스토리지 프로필 파싱 실패:", err);
+          }
+        }
+      };
+
+      // =================================================================
+      // 🐾 [컴포넌트] 조장님 지정 구역(#dog-chips) 전용 동적 칩 UI 빌더
+      // =================================================================
+      function renderDogChips() {
+        const wrap = document.getElementById("dog-chips");
+        if (!wrap) return;
+        wrap.innerHTML = dogsList
+          .map(
+            (d) => `
+          <button class="dog-chip ${d.id === selectedDogId ? "selected" : ""}" onclick="selectDog(${d.id})">
+            🐾 ${d.name}
+            <span style="font-weight:400;color:#888;font-size:0.8rem;">${d.breed}</span>
+          </button>`,
+          )
+          .join("");
+      }
+
+      // =================================================================
+      // 🩺 [인터랙션] 강아지 선택 시 만성 질환 경고 배너 실시간 연동 매핑
+      // =================================================================
+      async function selectDog(id) {
+        selectedDogId = id;
+        renderDogChips();
+
+        // 선택 변경 시 검색창 및 기존 연산 트리 불빛 원복 초기화
+        document.getElementById("resultCard").classList.add("d-none");
+        document.getElementById("searchInput").value = "";
+        document.querySelectorAll(".tag-symptom").forEach((tag) => {
+          tag.classList.remove("active-tag");
+          tag.style.border = ""; // 기존 테두리 불빛 초기화
+          tag.style.fontWeight = ""; // 기존 굵기 초기화
+        });
+
+        const dog = dogsList.find((d) => d.id === id);
+        if (!dog) return;
+
+        // 기저질환 '없음' 문자열 및 공백 필터링 정제
+        const conditions = dog.diseases
+          ? dog.diseases.filter((c) => c !== "없음" && c.trim() !== "")
+          : [];
+
+        // 조장님 화면 상단의 노란색 만성 질환 경고 배너 컨트롤
+        const banner = document.getElementById("chronicDiseaseBanner");
+        if (conditions.length > 0) {
+          const allDiseasesText = conditions.join(", ");
+          document.getElementById("chronicDiseaseName").innerText =
+            allDiseasesText;
+          banner.classList.remove("d-none");
+          logMessage(
+            `[연동 완료] '${dog.name}'의 기저질환 [${allDiseasesText}] 배너 동기화.`,
+          );
+
+          try {
+            const riskRes = await fetch(API + "/memberC/get_risk_symptoms", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ conditions: conditions }),
+            });
+            const riskData = await riskRes.json();
+
+            if (riskData.success && riskData.risk_symptoms.length > 0) {
+              // 백엔드가 발라낸 위험 증상(ex: 기침, 헥헥거림)에 해당하는 해시태그에 강렬한 border 불빛 점등!
+              riskData.risk_symptoms.forEach((symptom) => {
+                const tagElement = document.getElementById(
+                  `tag-item-${symptom}`,
+                );
+                if (tagElement) {
+                  tagElement.style.border = "1.5px solid #fc4a11"; // 오렌지색 테두리 활성화
+                  tagElement.style.fontWeight = "bold"; // 글씨 두껍게 변경
+                }
+              });
+              logMessage(
+                `[위험 조율] 기저질환 연동 고위험 취약 증상 태그 ${riskData.risk_symptoms.length}건 경고 마킹 완료.`,
+              );
+            }
+          } catch (err) {
+            console.error("위험 증상 매핑 통신 실패:", err);
+          }
+        } else {
+          banner.classList.add("d-none");
+          logMessage(
+            `[연동 안내] '${dog.name}'은 특이 기저질환이 없는 안전 상태입니다.`,
+          );
+        }
+      }
+
+      // [기존 유지] 검색, KMP 탐색 알고리즘, 애니메이션 엔진 관련 메소드
+
+      function handleSearchInput() {
+        const query = document.getElementById("searchInput").value.trim();
+
+        const box = document.getElementById("autocompleteBox");
+
+        if (!query) {
+          box.classList.add("d-none");
+
+          return;
+        }
+
+        fetch(`/memberC/autocomplete?query=${encodeURIComponent(query)}`)
+          .then((response) => response.json())
+
+          .then((data) => {
+            if (data.matches && data.matches.length > 0) {
+              box.innerHTML = "";
+
+              data.matches.forEach((word) => {
+                box.innerHTML += `<div class="autocomplete-item" onclick="selectKeyword('${word}')">🐾 ${word}</div>`;
+              });
+
+              box.classList.remove("d-none");
+            } else {
+              box.classList.add("d-none");
+            }
+          })
+
+          .catch((err) => console.error("Trie 자동완성 통신 실패:", err));
+      }
+
+      function selectKeyword(word) {
+        document.getElementById("searchInput").value = word;
+
+        document.getElementById("autocompleteBox").classList.add("d-none");
+
+        document.querySelectorAll(".tag-symptom").forEach((tag) => {
+          tag.classList.remove("active-tag");
+        });
+
+        const selectedTagElement = document.getElementById(`tag-item-${word}`);
+
+        if (selectedTagElement) {
+          selectedTagElement.classList.add("active-tag");
+        }
+
+        executeKMPSearch();
+      }
+
+      function executeKMPSearch() {
+        const keyword = document.getElementById("searchInput").value.trim();
+
+        document.querySelectorAll(".tag-symptom").forEach((tag) => {
+          if (tag.innerText !== `# ${keyword}`) {
+            tag.classList.remove("active-tag");
+          }
+        });
+
+        document.querySelectorAll(".tree-node").forEach((node) => {
+          node.className = "tree-node";
+        });
+
+        document.getElementById("resultCard").classList.remove("d-none");
+
+        document.getElementById("diseaseName").innerText =
+          `파이썬 백엔드 알고리즘 연산 중...`;
+
+        document.getElementById("stepContainer").innerHTML =
+          `<div class="text-muted small py-3">연산 데이터 수신 중...</div>`;
+
+        logMessage(`'${keyword}' 정밀 분석 파이썬 서버로 POST 요청 송신.`);
+
+        fetch("/memberC/search", {
+          method: "POST",
+
+          headers: { "Content-Type": "application/json" },
+
+          body: JSON.stringify({ keyword: keyword }),
+        })
+          .then((response) => response.json())
+
+          .then((res) => {
+            if (!res.success) {
+              alert(res.msg);
+
+              return;
+            }
+
+            const animationSteps = res.steps || [];
+
+            let idx = 0;
+
+            function nextAnimation() {
+              if (idx >= animationSteps.length) {
+                showFinalResults(res.data, res.path, res.reviews);
+                return;
+              }
+              const currentStep = animationSteps[idx];
+
+              const element = document.getElementById(
+                `node-${currentStep.name}`,
+              );
+
+              if (element) {
+                if (currentStep.status === "visiting") {
+                  element.className = "tree-node visiting";
+                  logMessage(`-> DFS 트리 추적: [${currentStep.name}]`);
+                } else if (currentStep.status === "fail") {
+                  element.className = "tree-node fail";
+                  logMessage(`<- 백트래킹 회수: [${currentStep.name}]`);
+                } else if (currentStep.status === "hit") {
+                  element.className = "tree-node hit";
+                  logMessage(`타겟 매칭 성공: [${currentStep.name}]`);
+                }
+              }
+
+              idx++;
+
+              setTimeout(nextAnimation, 400);
+            }
+            nextAnimation();
+          })
+
+          .catch((err) => {
+            console.error("서버 통신 실패:", err);
+            alert("백엔드 서버 연산 실패");
+          });
+      }
+
+      function showFinalResults(diseaseData, pathData, kmpReviews) {
+        if (!diseaseData) return;
+
+        if (pathData) {
+          pathData.forEach((name) => {
+            const el = document.getElementById(`node-${name}`);
+            if (el) el.className = "tree-node hit";
+          });
+          document.getElementById("diseaseCategory").innerText =
+            pathData[1] || "-";
+        }
+
+        document.getElementById("diseaseName").innerText =
+          `🩺 진단명: [${diseaseData.name}]`;
+
+        const badge = document.getElementById("dangerBadge");
+        badge.innerText = `위험도: ${diseaseData.danger}`;
+
+        if (diseaseData.danger === "위험")
+          badge.className = "badge p-2 bg-danger text-white";
+        else if (diseaseData.danger === "보통")
+          badge.className = "badge p-2 bg-warning text-dark";
+        else badge.className = "badge p-2 bg-info text-white";
+
+        const stepArea = document.getElementById("stepContainer");
+
+        stepArea.innerHTML = "";
+
+        diseaseData.steps.forEach((stepText, idx) => {
+          stepArea.innerHTML += `<div class="guide-step"><span class="badge bg-success me-2">${idx + 1}단계</span><span class="text-dark fw-bold" style="font-size:14px;">${stepText}</span></div>`;
+        });
+
+        const alertArea = document.getElementById("kmpAlertArea");
+        alertArea.innerHTML = "";
+
+        if (kmpReviews && kmpReviews.length > 0) {
+          kmpReviews.forEach((rev) => {
+            alertArea.innerHTML += `<div class="text-danger small mb-2 border-bottom pb-1">📌 <strong>후기 적발 [${rev.risk}]:</strong> "${rev.text}"</div>`;
+          });
+        } else {
+          alertArea.innerHTML = `<div class="text-success small fw-bold">🌿 KMP 스캔: 파이썬 검출 결과 특이점이 없는 안전 지침입니다.</div>`;
+        }
+
+        const btn = document.getElementById("emergencyButton");
+
+        if (diseaseData.danger === "위험") {
+          btn.className = "btn-emergency-link btn-danger-mode";
+        } else {
+          btn.className = "btn-emergency-link btn-warning-mode";
+        }
+
+        document.getElementById("emergencyLinkContainer").className =
+          "d-block mt-3";
+
+        logMessage(`파이썬 데이터 바인딩 전역 마감.`);
+      }
+      function triggerEmergencyHotlink() {
+        if (window.parent && typeof window.parent.showSection === "function") {
+          alert(
+            "🚨 경고: 치명적인 증상이 감지되었습니다. 24시 동물병원 최단 경로 안내 시스템으로 즉시 연동합니다.",
+          );
+
+          window.parent.showSection("D");
+        } else {
+          alert(
+            "대시보드 통합 환경인 index.html에서 실행 시 4번 지도 모듈로 즉시 화면이 전환됩니다!",
+          );
+        }
+      }
+    </script>
+  </body>
+</html>

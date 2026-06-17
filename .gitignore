@@ -1,0 +1,4 @@
+# .gitignore 파일 내용 예시
+.env
+.env.local
+node_modules/

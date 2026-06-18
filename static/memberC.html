@@ -259,7 +259,7 @@
                 type="text"
                 id="searchInput"
                 class="form-control form-control-lg"
-                placeholder="구토, 설사, 눈물, 기침 등을 입력하거나 하단 해시태그를 클릭하세요"
+                placeholder="구토, 설사, 기침, 배나옴 등을 입력하거나 하단 해시태그를 클릭하세요"
                 autocomplete="off"
                 oninput="handleSearchInput()"
                 style="font-size: 16px"
@@ -349,70 +349,96 @@
                 <div id="visualTreeContainer" class="tree-container">
                   반려동물질환<br />
                   ├──
-                  <span id="node-소화기질환" class="tree-node">소화기질환</span
+                  <span id="node-소화기계질환" class="tree-node"
+                    >소화기계질환</span
                   ><br />
                   │&nbsp;&nbsp;&nbsp;├──
                   <span id="node-급성위염" class="tree-node">급성위염</span>
                   <span style="color: #adb5bd; font-size: 11px">(구토)</span
                   ><br />
-                  │&nbsp;&nbsp;&nbsp;└──
+                  │&nbsp;&nbsp;&nbsp;├──
                   <span id="node-급성장염" class="tree-node">급성장염</span>
                   <span style="color: #adb5bd; font-size: 11px">(설사)</span
                   ><br />
-                  ├──
-                  <span id="node-안과이비인후과" class="tree-node"
-                    >안과이비인후과</span
-                  ><br />
-                  │&nbsp;&nbsp;&nbsp;├──
-                  <span id="node-안구유루증" class="tree-node">안구유루증</span>
-                  <span style="color: #adb5bd; font-size: 11px">(눈물)</span
-                  ><br />
                   │&nbsp;&nbsp;&nbsp;└──
-                  <span id="node-외이도염" class="tree-node">외이도염</span>
-                  <span style="color: #adb5bd; font-size: 11px">(귀긁음)</span
+                  <span id="node-이물섭식" class="tree-node">이물섭식</span>
+                  <span style="color: #adb5bd; font-size: 11px">(침흘림)</span
                   ><br />
                   ├──
-                  <span id="node-호흡기치과" class="tree-node">호흡기치과</span
+                  <span id="node-피부및외이염질환" class="tree-node"
+                    >피부및외이염질환</span
                   ><br />
                   │&nbsp;&nbsp;&nbsp;├──
-                  <span id="node-기관지염" class="tree-node">기관지염</span>
-                  <span style="color: #adb5bd; font-size: 11px">(기침)</span
-                  ><br />
-                  │&nbsp;&nbsp;&nbsp;└──
-                  <span id="node-치주염" class="tree-node">치주염</span>
-                  <span style="color: #adb5bd; font-size: 11px">(입냄새)</span
-                  ><br />
-                  ├──
-                  <span id="node-피부신경계" class="tree-node">피부신경계</span
-                  ><br />
-                  │&nbsp;&nbsp;&nbsp;├──
-                  <span id="node-아토피피부염" class="tree-node"
-                    >아토피피부염</span
+                  <span id="node-알레르기성피부염" class="tree-node"
+                    >알레르기성피부염</span
                   >
                   <span style="color: #adb5bd; font-size: 11px">(몸긁음)</span
                   ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-외이도염" class="tree-node">외이도염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(귀긁음)</span
+                  ><br />
                   │&nbsp;&nbsp;&nbsp;└──
-                  <span id="node-열사병" class="tree-node">열사병</span>
-                  <span style="color: #adb5bd; font-size: 11px">(헥헥거림)</span
+                  <span id="node-말라세치아감염" class="tree-node"
+                    >말라세치아감염</span
+                  >
+                  <span style="color: #adb5bd; font-size: 11px">(발핥음)</span
                   ><br />
-                  └──
-                  <span id="node-응급기저질환" class="tree-node"
-                    >응급기저질환</span
+                  ├──
+                  <span id="node-호흡기계질환" class="tree-node"
+                    >호흡기계질환</span
                   ><br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;├──
-                  <span id="node-슬개골탈구" class="tree-node">슬개골탈구</span>
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-상부호흡기계질환" class="tree-node"
+                    >상부호흡기계질환</span
+                  >
+                  <span style="color: #adb5bd; font-size: 11px">(기침)</span
+                  ><br />
+                  ├── <span id="node-안과질환" class="tree-node">안과질환</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-결막염" class="tree-node">결막염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(눈충혈)</span
+                  ><br />
+                  ├──
+                  <span id="node-구강및근골격계질환" class="tree-node"
+                    >구강및근골격계질환</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-치주염" class="tree-node">치주염</span>
+                  <span style="color: #adb5bd; font-size: 11px">(입냄새)</span
+                  ><br />
+                  │&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-슬개골탈구파행" class="tree-node"
+                    >슬개골탈구파행</span
+                  >
                   <span style="color: #adb5bd; font-size: 11px"
                     >(뒷다리절뚝)</span
+                  ><br />
+                  └──
+                  <span id="node-노령기만성기저질환" class="tree-node"
+                    >노령기만성기저질환</span
                   ><br />
                   &nbsp;&nbsp;&nbsp;&nbsp;├──
                   <span id="node-급성신부전" class="tree-node">급성신부전</span>
                   <span style="color: #adb5bd; font-size: 11px">(포도먹음)</span
                   ><br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;└──
-                  <span id="node-심장원성실신" class="tree-node"
-                    >심장원성실신</span
+                  &nbsp;&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-심장질환실신" class="tree-node"
+                    >심장질환실신</span
                   >
-                  <span style="color: #adb5bd; font-size: 11px">(기절)</span>
+                  <span style="color: #adb5bd; font-size: 11px">(기절)</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;├──
+                  <span id="node-유선종양" class="tree-node">유선종양</span>
+                  <span style="color: #adb5bd; font-size: 11px"
+                    >(가슴몽우리)</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;└──
+                  <span id="node-부신피질기능항진증" class="tree-node"
+                    >부신피질기능항진증</span
+                  >
+                  <span style="color: #adb5bd; font-size: 11px">(배나옴)</span>
                 </div>
               </div>
             </div>
@@ -443,28 +469,38 @@
 
       //페이지 로드 시 모듈 A 인프라 연동 엔진
 
-      window.onload = async function () {
+      async function syncLiveDogsList() {
         try {
-          // 모듈 A 인프라 바스켓으로부터 실시간 등록 강아지 목록 Fetch
           const res = await fetch(API + "/api/dogs");
-          dogsList = await res.json();
-        } catch (e) {
-          console.error("인프라 데이터 연동 실패:", e);
-          logMessage(
-            "[안내] 모듈 A 인프라 바인딩 대기 중 (일반 검색 모드 활성화).",
-          );
-        }
+          const newLiveList = await res.json();
 
-        // 강아지 목록이 있을 때만 칩 선택기 활성화 (없어도 튕기지 않고 일반 모드 유지)
-        if (dogsList && dogsList.length > 0) {
-          renderDogChips();
-        } else {
+          // 💡 최적화: 기존 리스트와 새 리스트가 다를 때만 칩 UI를 다시 그려서 화면 깜빡임 차단
+          if (JSON.stringify(dogsList) !== JSON.stringify(newLiveList)) {
+            dogsList = newLiveList;
+            if (dogsList && dogsList.length > 0) {
+              renderDogChips();
+              logMessage(
+                "[동기화] 멤버 A 바스켓으로부터 신규 반려견 인프라 실시간 반영 완료.",
+              );
+            }
+          }
+        } catch (e) {
+          console.error("실시간 데이터 버스 연동 실패:", e);
+        }
+      }
+
+      // 페이지가 처음 켜질 때 가동되는 이벤트
+      window.onload = async function () {
+        // 1. 즉시 실시간 데이터 1차 동기화
+        await syncLiveDogsList();
+
+        if (!dogsList || dogsList.length === 0) {
           logMessage(
             "[안내] 등록된 반려견 프로필이 없어 일반 자율 검색 모드로 대기합니다.",
           );
         }
 
-        // 모듈 B 대시보드 내비게이션 연속성 유지용 자동 선택 동기화
+        // 2. 탭 전환 연동 (모듈 B나 메인 대시보드 스토리지 연속성 유지)
         const rawProfile = localStorage.getItem("module1_profile");
         if (rawProfile && rawProfile !== "undefined" && rawProfile !== "null") {
           try {
@@ -480,7 +516,16 @@
             console.error("로컬스토리지 프로필 파싱 실패:", err);
           }
         }
+
+        // 3. ⏱️ [백그라운드 폴링] 3초마다 무자각 실시간 동기화 파이프라인 가동
+        setInterval(syncLiveDogsList, 3000);
       };
+
+      // 4. 👀 [창 포커스 이벤트] 사용자가 다른 탭(멤버 A)을 보다가 다시 우리 탭(멤버 C)을 누르는 순간 즉시 강제 갱신
+      window.addEventListener("focus", syncLiveDogsList);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) syncLiveDogsList();
+      });
 
       // =================================================================
       // 🐾 [컴포넌트] 조장님 지정 구역(#dog-chips) 전용 동적 칩 UI 빌더
@@ -498,7 +543,6 @@
           )
           .join("");
       }
-
       // =================================================================
       // 🩺 [인터랙션] 강아지 선택 시 만성 질환 경고 배너 실시간 연동 매핑
       // =================================================================
@@ -568,11 +612,11 @@
         }
       }
 
-      // [기존 유지] 검색, KMP 탐색 알고리즘, 애니메이션 엔진 관련 메소드
+      //검색, KMP 탐색 알고리즘, 애니메이션 엔진 관련 메소드
 
       function handleSearchInput() {
+        const inputElement = document.getElementById("searchInput");
         const query = document.getElementById("searchInput").value.trim();
-
         const box = document.getElementById("autocompleteBox");
 
         if (!query) {
@@ -585,6 +629,10 @@
           .then((response) => response.json())
 
           .then((data) => {
+            if (inputElement.value.trim() === "") {
+              box.classList.add("d-none");
+              return;
+            }
             if (data.matches && data.matches.length > 0) {
               box.innerHTML = "";
 
@@ -621,6 +669,18 @@
 
       function executeKMPSearch() {
         const keyword = document.getElementById("searchInput").value.trim();
+
+        // [알고리즘 보완] 사용자가 오타를 낸 상태로 검색 버튼을 눌렀을 때의 자동 보정 인프라
+        // 현재 화면에 표시된 자동완성 상자의 첫 번째 추천 단어가 있다면 그것으로 강제 교정합니다.
+        const firstMatch = document.querySelector(".autocomplete-item");
+        if (firstMatch) {
+          // '🐾 구토' 형태에서 '구토' 문자열만 추출
+          const correctedWord = firstMatch.innerText.replace("🐾 ", "").trim();
+          if (keyword !== correctedWord && keyword.length > 0) {
+            keyword = correctedWord;
+            document.getElementById("searchInput").value = keyword; // 검색창 글자도 예쁘게 자동 보정
+          }
+        }
 
         document.querySelectorAll(".tag-symptom").forEach((tag) => {
           if (tag.innerText !== `# ${keyword}`) {

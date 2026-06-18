@@ -113,12 +113,27 @@ def add_log(dog_id):
     dog = next((d for d in dogs if d["id"] == dog_id), None)
     data = request.get_json()
     new_weight = float(data.get("weight", 0))
+    
+    # [추가] 프론트엔드에서 보낸 증상(symptoms) 리스트 받기
+    symptoms = data.get("symptoms", [])
+    if not isinstance(symptoms, list):
+        symptoms = []
+
     arr = logs[dog_id]
     prev = arr[-1] if arr else None
+    
     # [알고리즘] 규칙 기반 분류 호출 — 직전 로그와 현재 로그를 비교해 건강 유형 판정
     health_type = classify_type(dog, {"weight": new_weight, "activity": data.get("activity", "보통")}, prev)
-    new_log = {"date": data.get("date") or str(date.today()), "weight": new_weight,
-               "activity": data.get("activity", "보통"), "memo": data.get("memo", ""), "type": health_type}
+    
+    # [수정] new_log 딕셔너리에 "symptoms" 키 추가
+    new_log = {
+        "date": data.get("date") or str(date.today()), 
+        "weight": new_weight,
+        "activity": data.get("activity", "보통"), 
+        "symptoms": symptoms,  # <--- 증상 데이터 추가!
+        "memo": data.get("memo", ""), 
+        "type": health_type
+    }
     arr.append(new_log)
     dog["weight"] = new_weight
     return jsonify({"ok": True, "log": new_log})
